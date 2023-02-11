@@ -53,25 +53,11 @@ export const createDevelopersInfos = async (request: Request, response: Response
 
     let queryString: string =
       `
-          INSERT INTO developer_infos ("developerSince", "preferredOS")
-          VALUES ($1, $2)
+          INSERT INTO developer_infos ("developerSince", "preferredOS", "developerId")
+          VALUES ($1, $2, $3)
           RETURNING *;
       `
-    let queryResult: DevelopersInfoResult = await cliente.query(queryString, [developersInfoData.developerSince, developersInfoData.preferredOS])
-
-    queryString = `
-        UPDATE
-            developers
-        SET "developerInfosId" = $1
-        WHERE id = $2
-        RETURNING *;
-
-    `
-    const queryConfig: QueryConfig = {
-      text: queryString,
-      values: [queryResult.rows[0].id, developersId]
-    }
-    await cliente.query(queryConfig)
+    let queryResult: DevelopersInfoResult = await cliente.query(queryString, [developersInfoData.developerSince, developersInfoData.preferredOS, developersId])
 
     return response.status(201).json(queryResult.rows[0])
 
@@ -94,10 +80,10 @@ export const listDevelopers = async (request: Request, response: Response): Prom
       SELECT dev.*,
              info.id               as "infoId",
              info."developerSince" as "developerSince",
-             info."preferredOS"    as "preferredOs"
+             info."preferredOS"    as "preferredOS"
       FROM developers dev
                JOIN
-           developer_infos info ON dev."developerInfosId" = info.id
+           developer_infos info ON dev."id" = info."developerId"
       WHERE dev.id = $1;
 
   `
@@ -116,10 +102,10 @@ export const listDevelopersAll = async (request: Request, response: Response): P
       SELECT dev.*,
              info.id               as "infoId",
              info."developerSince" as "developerSince",
-             info."preferredOS"    as "preferredOs"
+             info."preferredOS"    as "preferredOS"
       FROM developers dev
                LEFT JOIN
-           developer_infos info ON dev."developerInfosId" = info.id
+           developer_infos info ON dev."id" = info."developerId"
   `
   const queryConfig: QueryConfig = {
     text: queryString
@@ -163,68 +149,59 @@ export const updateDevelopers = async (request: Request, response: Response): Pr
   return response.status(200).json(queryResult.rows[0])
 
 }
-// null value in column "preferredOS" of relation "developer_infos" violates not-null constraint
+
 export const updateDevelopersInfo = async (request: Request, response: Response): Promise<Response | void> => {
-  try {
-    const newDeveloperInfoData: IDevelopersInfo = request.body;
 
-    const idDeveloper: number = parseInt(request.params.id);
+  const newDeveloperInfoData: IDevelopersInfo = request.body;
 
-    const getDevelopresInfoQuery = `
+  const idDeveloper: number = parseInt(request.params.id);
 
-        SELECT info.id               as "infoId",
-               info."developerSince" as "developerSince",
-               info."preferredOS"    as "preferredOs"
-        FROM developers dev
-                 JOIN
-             developer_infos info ON dev."developerInfosId" = info.id
-        WHERE dev.id = $1`;
+  const getDevelopresInfoQuery = `
+      SELECT info.id               as "infoId",
+             info."developerSince" as "developerSince",
+             info."preferredOS"    as "preferredOS"
+      FROM developers dev
+               JOIN
+           developer_infos info ON dev."id" = info."developerId"
+      WHERE dev.id = $1`;
 
-    const developersInfoResponse = await cliente.query(getDevelopresInfoQuery, [idDeveloper]);
-    const developerInfo = developersInfoResponse.rows[0];
+  const developersInfoResponse = await cliente.query(getDevelopresInfoQuery, [idDeveloper]);
+  const developerInfo = developersInfoResponse.rows[0];
 
-    const valuesDevelopersInfo: IDevelopersInfoRequest = { ...developerInfo, ...newDeveloperInfoData };
+  const valuesDevelopersInfo: IDevelopersInfoRequest = { ...developerInfo, ...newDeveloperInfoData };
 
-    const queryString: string = `
-        UPDATE developer_infos
-        SET "developerSince" = $1,
-            "preferredOS"    = $2
-        WHERE id = $3
-        RETURNING *;
+  const queryString: string = `
+      UPDATE developer_infos
+      SET "developerSince" = $1,
+          "preferredOS"    = $2
+      WHERE id = $3
+      RETURNING *;
+  `
 
-    `
-    const queryConfig: QueryConfig = {
-      text: queryString,
-      values: [valuesDevelopersInfo.developerSince, valuesDevelopersInfo.preferredOS, developerInfo.infoId]
-    }
-    const queryResult = await cliente.query(queryConfig)
-
-    return response.status(200).json(queryResult.rows[0])
-
-
-  } catch (error: any) {
-    if (error.message.includes('null value in column "preferredOS" of relation ')) {
-      return response.status((404)).json({ message: 'Missing requires keys: preferredOS' })
-
-    }
-    console.log(error)
-    return response.status(500).json({ message: 'Internal server error' })
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [valuesDevelopersInfo.developerSince, valuesDevelopersInfo.preferredOS, developerInfo.infoId]
   }
+
+  const queryResult = await cliente.query(queryConfig)
+
+  return response.status(200).json(queryResult.rows[0])
 }
-export const deleteDeveloper = async (request:Request, response:Response, next:NextFunction): Promise<Response | void> => {
+
+export const deleteDeveloper = async (request: Request, response: Response, next: NextFunction): Promise<Response | void> => {
 
   const idDeleteDeveloper: string = request.params.id
   const queryString: string = `
-        DELETE
-        FROM developers
-        WHERE id = $1
-    `
+      DELETE
+      FROM developers
+      WHERE id = $1
+  `
   const queryConfig: QueryConfig = {
     text: queryString,
     values: [idDeleteDeveloper]
   }
 
-   await cliente.query(queryConfig)
+  await cliente.query(queryConfig)
 
   return response.status(200).json();
 }
