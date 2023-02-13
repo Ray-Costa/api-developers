@@ -28,4 +28,4 @@ export type DevelopersInfoResult = QueryResult<IDevelopersInfo>
 
 export type DevelopersRequiredKeys = "name" | "email";
 
-export type DevelopersInfoRequiredKeys = "developerSince" | "preferredOS";
+

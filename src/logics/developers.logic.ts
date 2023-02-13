@@ -53,11 +53,19 @@ export const createDevelopersInfos = async (request: Request, response: Response
 
     let queryString: string =
       `
-          INSERT INTO developer_infos ("developerSince", "preferredOS", "developerId")
-          VALUES ($1, $2, $3)
+          INSERT INTO developer_infos ("developerSince", "preferredOS")
+          VALUES ($1, $2)
           RETURNING *;
       `
-    let queryResult: DevelopersInfoResult = await cliente.query(queryString, [developersInfoData.developerSince, developersInfoData.preferredOS, developersId])
+    let queryResult: DevelopersInfoResult = await cliente.query(queryString, [developersInfoData.developerSince, developersInfoData.preferredOS])
+
+    let updateDeveloperQuery = `
+        UPDATE developers
+        SET "developerInfoId" = $1
+        WHERE id = $2
+    `
+
+    await cliente.query(updateDeveloperQuery, [queryResult.rows[0].id, developersId])
 
     return response.status(201).json(queryResult.rows[0])
 
@@ -82,8 +90,8 @@ export const listDevelopers = async (request: Request, response: Response): Prom
              info."developerSince" as "developerSince",
              info."preferredOS"    as "preferredOS"
       FROM developers dev
-               JOIN
-           developer_infos info ON dev."id" = info."developerId"
+               LEFT JOIN
+           developer_infos info ON dev."developerInfoId" = info."id"
       WHERE dev.id = $1;
 
   `
@@ -97,6 +105,43 @@ export const listDevelopers = async (request: Request, response: Response): Prom
 
 }
 
+export const listDeveloperProjects = async (request: Request, response: Response): Promise<Response> => {
+
+  const developersId: number = parseInt(request.params.id)
+
+  const queryString: string = `
+      SELECT dev.*,
+             info.id               as "infoId",
+             info."developerSince" as "developerSince",
+             info."preferredOS"    as "preferredOS",
+             proj.id               as "projectID",
+             proj.name             as "projectName",
+             proj.description      as "projectDescription",
+             proj."estimatedTime"  as "projectEstimatedTime",
+             proj.repository       as "projectRepository",
+             proj."startDate"      as "projectStartDate",
+             proj."endDate"        as "projectEndDate",
+             tech."id"             as "technologyId",
+             tech."name"           as "technologyName"
+      FROM developers dev
+               LEFT JOIN
+           developer_infos info ON dev."developerInfoId" = info."id"
+               INNER JOIN projects proj on dev.id = proj."developerId"
+               LEFT JOIN projects_technologies proj_tech on proj.id = proj_tech."projectId"
+               LEFT JOIN technologies tech on proj_tech."techId" = tech.id
+      WHERE dev.id = $1;
+
+  `
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [developersId]
+  }
+  const queryResult: DevelopersInfosResult = await cliente.query(queryConfig)
+
+  return response.status(200).json(queryResult.rows)
+
+}
+
 export const listDevelopersAll = async (request: Request, response: Response): Promise<Response> => {
   const queryString: string = `
       SELECT dev.*,
@@ -105,7 +150,7 @@ export const listDevelopersAll = async (request: Request, response: Response): P
              info."preferredOS"    as "preferredOS"
       FROM developers dev
                LEFT JOIN
-           developer_infos info ON dev."id" = info."developerId"
+           developer_infos info ON dev."developerInfoId" = info."id"
   `
   const queryConfig: QueryConfig = {
     text: queryString
@@ -162,7 +207,7 @@ export const updateDevelopersInfo = async (request: Request, response: Response)
              info."preferredOS"    as "preferredOS"
       FROM developers dev
                JOIN
-           developer_infos info ON dev."id" = info."developerId"
+           developer_infos info ON dev."developerInfoId" = info."id"
       WHERE dev.id = $1`;
 
   const developersInfoResponse = await cliente.query(getDevelopresInfoQuery, [idDeveloper]);
@@ -203,5 +248,5 @@ export const deleteDeveloper = async (request: Request, response: Response, next
 
   await cliente.query(queryConfig)
 
-  return response.status(200).json();
+  return response.status(204).json();
 }
