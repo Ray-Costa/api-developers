@@ -18,17 +18,16 @@ export const createDevelopers = async (request: Request, response: Response): Pr
 
     const queryString: string = format(
       `
-          INSERT INTO developers(%I)
-          VALUES (%L)
+          INSERT INTO developers("name", "email")
+          VALUES ($1, $2)
           RETURNING *;
-      `,
-      Object.keys(developersData),
-      Object.values(developersData)
+
+      `
     )
 
-    const queryResult: DevelopersResult = await cliente.query(queryString)
+    const { rows }: DevelopersResult = await cliente.query(queryString, [developersData.name, developersData.email])
 
-    return response.status(201).json(queryResult.rows[0])
+    return response.status(201).json(rows[0])
 
   } catch (error: any) {
     if (error.message.includes('null value in column "name" of relation')) {
@@ -50,6 +49,16 @@ export const createDevelopersInfos = async (request: Request, response: Response
   try {
     const developersId: number = parseInt(request.params.id)
     const developersInfoData: IDevelopersInfoRequest = request.body
+
+    let developerInfoQuery = `SELECT *
+                              FROM developers
+                              WHERE id = $1`;
+    const { rows } = await cliente.query(developerInfoQuery, [developersId]);
+    if (rows[0].developerInfoId) {
+      return response.status(400).json({
+        message: 'Developer infos already exists.'
+      })
+    }
 
     let queryString: string =
       `
@@ -212,7 +221,9 @@ export const updateDevelopersInfo = async (request: Request, response: Response)
 
   const developersInfoResponse = await cliente.query(getDevelopresInfoQuery, [idDeveloper]);
   const developerInfo = developersInfoResponse.rows[0];
-
+  if (!developerInfo) {
+    return response.status(400).json({ message: 'Developer info doesn\'t exists' })
+  }
   const valuesDevelopersInfo: IDevelopersInfoRequest = { ...developerInfo, ...newDeveloperInfoData };
 
   const queryString: string = `

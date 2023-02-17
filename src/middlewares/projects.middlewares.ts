@@ -13,6 +13,15 @@ export const validateBodyProjectsMiddleware = async (request: Request, response:
   }
   return next()
 }
+export const validateBodyProjMiddleware = async (request: Request, response: Response, next: NextFunction): Promise<Response | void> => {
+  if (!request.body.developerId ||!request.body.description || !request.body.estimatedTime || !request.body.repository || !request.body.startDate) {
+    return response.status(400).json({
+      message: 'Missing required keys: developerId,description,estimatedTime,repository,startDate.'
+    })
+
+  }
+  return next()
+}
 
 export const projectsExists = async (request: Request, response: Response, next: NextFunction): Promise<Response | void> => {
 

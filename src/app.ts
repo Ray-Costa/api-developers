@@ -11,9 +11,9 @@ import {
   updateDevelopersInfo
 } from './logics/developers.logic';
 import {
-  developersExists,
+  developersExists, validateBodyDeveMiddleware,
   validateBodyInfosMiddleware,
-  validateBodyMiddleware
+  validateBodyMiddleware, validateDeveloperInfoPreferredOS
 } from './middlewares/developers.middlewares';
 import {
   createProjects,
@@ -25,7 +25,7 @@ import {
 } from './logics/projects.logic';
 import {
   projectsExists,
-  validateBodyProjectsMiddleware,
+  validateBodyProjectsMiddleware, validateBodyProjMiddleware,
   validateProjectsMiddleware,
   validateTechnology
 } from './middlewares/projects.middlewares';
@@ -42,12 +42,12 @@ app.post('/developers', createDevelopers)
 app.get('/developers/:id', developersExists, listDevelopers)
 app.get('/developers/:id/projects', developersExists, listDeveloperProjects)
 app.get('/developers', listDevelopersAll)
-app.patch('/developers/:id', developersExists, validateBodyMiddleware, updateDevelopers)
-app.delete('/developers/:id', deleteDeveloper)
-app.post('/developers/:id/info', developersExists, createDevelopersInfos)
-app.patch('/developers/:id/infos', developersExists, validateBodyInfosMiddleware, updateDevelopersInfo)
+app.patch('/developers/:id', developersExists, validateBodyDeveMiddleware, updateDevelopers)
+app.delete('/developers/:id',developersExists, deleteDeveloper)
+app.post('/developers/:id/infos', developersExists, createDevelopersInfos)
+app.patch('/developers/:id/infos', validateDeveloperInfoPreferredOS, developersExists, validateBodyInfosMiddleware, updateDevelopersInfo)
 
-app.post('/projects', validateBodyProjectsMiddleware, createProjects)
+app.post('/projects',developersExists, validateBodyProjMiddleware, createProjects)
 app.get('/projects/:id', projectsExists, listProjects)
 app.get('/projects', listProjectsAll)
 app.patch('/projects/:id', projectsExists, validateProjectsMiddleware, updateProject)

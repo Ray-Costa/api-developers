@@ -29,3 +29,9 @@ export type DevelopersInfoResult = QueryResult<IDevelopersInfo>
 export type DevelopersRequiredKeys = "name" | "email";
 
 
+
+export enum supportedOS {
+  'Windows' = 'Windows',
+  'Linux' = 'Linux',
+  'MacOS' = 'MacOS'
+}

@@ -36,5 +36,4 @@ export enum technologies {
   'Django' = 'Django',
   'PostgreSQL' = 'PostgreSQL',
   'MongoDB' = 'MongoDB'
-
 }

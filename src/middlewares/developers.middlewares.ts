@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 import { QueryConfig } from 'pg';
 import { cliente } from '../database';
-import { DevelopersRequiredKeys } from '../interfaces/interface';
+import { DevelopersRequiredKeys, supportedOS } from '../interfaces/interface';
 
 export const developersExists = async (request: Request, response: Response, next: NextFunction): Promise<Response | void> => {
 
-  const developersId: number = parseInt(request.params.id)
+  const developersId: number = parseInt(request.params.id || request.body.developerId)
 
   const queryString: string = `
       SELECT COUNT(*)
@@ -53,5 +53,26 @@ export const validateBodyInfosMiddleware = async (request: Request, response: Re
   return next()
 }
 
+export const validateBodyDeveMiddleware = async (request: Request, response: Response, next: NextFunction): Promise<Response | void> => {
+  if (!request.body.name && !request.body.email) {
+    return response.status(400).json({
+      message: `At least one of those keys must be send`,
+      keys: ['name', 'email']
+    })
+  }
+  return next()
+}
+
+export const validateDeveloperInfoPreferredOS = async (request: Request, response: Response, next: NextFunction): Promise<Response | void> => {
+  let supportedOSList = Object.values(supportedOS);
+  if (request.body.preferredOS && !supportedOSList.includes(request.body.preferredOS)) {
+    return response.status(400).json({
+      message: 'OS not supported.',
+      options: supportedOSList
+    })
+  }
+
+  next();
+}
 
 

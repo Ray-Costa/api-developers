@@ -14,6 +14,7 @@ export const createProjects = async (request: Request, response: Response): Prom
         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;
     `;
 
+  console.log('here')
   const { rows }: ProjectsResult = await cliente.query(queryString, [projectsData.name, projectsData.description, projectsData.estimatedTime, projectsData.repository, projectsData.startDate, projectsData.endDate, projectsData.developerId])
 
   return response.status(201).json(rows[0])
@@ -75,7 +76,7 @@ export const listProjects = async (request: Request, response: Response): Promis
   }
   const queryResult: ProjectsTechResult = await cliente.query(queryConfig)
 
-  return response.status(200).json(queryResult.rows[0])
+  return response.status(200).json(queryResult.rows)
 }
 
 export const updateProject = async (request: Request, response: Response): Promise<Response> => {
@@ -200,5 +201,32 @@ export const createProjectTechnology = async (request: Request, response: Respon
 
   await cliente.query(queryMappingConfig)
 
-  return response.status(201).json(technology[0]);
+  const queryResponseString: string = `
+      SELECT proj.id              as "projectID",
+             proj.name            as "projectName",
+             proj.description     as "projectDescription",
+             proj."estimatedTime" as "projectEstimatedTime",
+             proj.repository      as "projectRepository",
+             proj."startDate"     as "projectStartDate",
+             proj."endDate"       as "projectEndDate",
+             proj."developerId"   as "developerId",
+             proj_tech."addedIn"  as "addedIn",
+             tech.id              as "technologyId",
+             tech.name            as "technologyName"
+      FROM projects proj
+               LEFT JOIN
+           projects_technologies proj_tech ON proj."id" = proj_tech."projectId"
+               LEFT JOIN technologies tech on proj_tech."techId" = tech.id
+      WHERE proj.id = $1
+        and tech.id = $2;
+  `;
+
+  const queryResponseMappingConfig: QueryConfig = {
+    text: queryResponseString,
+    values: [idProject, technology[0].id]
+  }
+
+  const { rows } = await cliente.query(queryResponseMappingConfig)
+
+  return response.status(201).json(rows[0]);
 }
