@@ -94,10 +94,12 @@ export const listDevelopers = async (request: Request, response: Response): Prom
   const developersId: number = parseInt(request.params.id)
 
   const queryString: string = `
-      SELECT dev.*,
-             info.id               as "infoId",
-             info."developerSince" as "developerSince",
-             info."preferredOS"    as "preferredOS"
+      SELECT dev.id as "developerID",
+             dev.name as "developerName",
+             dev.email as "developerEmail",
+             info.id               as "developerInfoID",
+             info."developerSince" as "developerInfoDeveloperSince",
+             info."preferredOS"    as "developerInfoPreferredOS"
       FROM developers dev
                LEFT JOIN
            developer_infos info ON dev."developerInfoId" = info."id"
@@ -119,10 +121,12 @@ export const listDeveloperProjects = async (request: Request, response: Response
   const developersId: number = parseInt(request.params.id)
 
   const queryString: string = `
-      SELECT dev.*,
-             info.id               as "infoId",
-             info."developerSince" as "developerSince",
-             info."preferredOS"    as "preferredOS",
+      SELECT dev.id as "developerID",
+             dev.name as "developerName",
+             dev.email as "developerEmail",
+             info.id               as "developerInfoID",
+             info."developerSince" as "developerInfoDeveloperSince",
+             info."preferredOS"    as "developerInfoPreferredOS",
              proj.id               as "projectID",
              proj.name             as "projectName",
              proj.description      as "projectDescription",
@@ -153,10 +157,12 @@ export const listDeveloperProjects = async (request: Request, response: Response
 
 export const listDevelopersAll = async (request: Request, response: Response): Promise<Response> => {
   const queryString: string = `
-      SELECT dev.*,
-             info.id               as "infoId",
-             info."developerSince" as "developerSince",
-             info."preferredOS"    as "preferredOS"
+      SELECT dev.id as "developerID" ,
+             dev.name as "developerName",
+             dev.email as "developerEmail",
+             info.id               as "developerInfoID",
+             info."developerSince" as "developerInfoDeveloperSince",
+             info."preferredOS"    as "developerInfoPreferredOS"
       FROM developers dev
                LEFT JOIN
            developer_infos info ON dev."developerInfoId" = info."id"

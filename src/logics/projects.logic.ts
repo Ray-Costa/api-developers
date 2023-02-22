@@ -52,7 +52,8 @@ export const listProjects = async (request: Request, response: Response): Promis
   const projectsId: number = parseInt(request.params.id)
 
   const queryString: string = `
-      SELECT proj.id              as "projectID",
+      SELECT
+             proj.id              as "projectID",
              proj.name            as "projectName",
              proj.description     as "projectDescription",
              proj."estimatedTime" as "projectEstimatedTime",
